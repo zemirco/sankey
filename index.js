@@ -2,7 +2,7 @@
 import {select} from 'd3-selection'
 import {sankey} from 'd3-sankey'
 import {rgb} from 'd3-color'
-import {scaleOrdinal, schemeCategory20} from 'd3-scale'
+import {scaleOrdinal} from 'd3-scale'
 import {transition} from 'd3-transition'
 
 const defaults = {
@@ -19,7 +19,7 @@ const defaults = {
   margin: {
     top: 1,
     right: 1,
-    bottom: 6,
+    bottom: 10,
     left: 1
   },
 
@@ -65,6 +65,8 @@ export default class Sankey {
       .nodePadding(nodePadding)
       .size([w, h])
 
+    this.defs = this.chart.append('defs')
+
     this.path = this.sankey.link()
 
     this.selectionLink = this.chart
@@ -81,7 +83,20 @@ export default class Sankey {
    */
   render (data, options = {}) {
     const {iterations} = this
-    const color = scaleOrdinal(schemeCategory20)
+    const color = scaleOrdinal()
+      .domain(['service', 'setting', 'attack'])
+      .range(['#009688', '#8BC34A', '#FFC107'])
+
+    const getGradID = (d) => `linkGrad-${d.source.name}-${d.target.name}`.replace(/\s/g, '')
+    const nodeColor = (d) => {
+      if (d.value < 1) {
+        d.color = '#bbb'
+      } else {
+        const category = d.name.replace(/ .*/, '').toLowerCase()
+        d.color = color(category)
+      }
+      return d.color
+    }
 
     // get data
     this.sankey
@@ -90,17 +105,16 @@ export default class Sankey {
       .layout(iterations)
 
     this.selectionLink
-      .data(data.links, d => d.source.name + d.target.name)
+      .data(data.links.filter(d => d.value >= 1), d => d.source.name + d.target.name)
       .enter()
       .append('path')
       .attr('class', 'link')
       .attr('d', this.path)
       .style('stroke-width', d => Math.max(1, d.dy))
-      // hide super small links which are just for positioning nodes
-      .style('display', d => d.value < 1 ? 'none' : 'inline')
+      .style('stroke', d => `url(#${getGradID(d)})`)
       .sort((a, b) => b.dy - a.dy)
       .append('title')
-      .text((d) => `${d.source.name} -> ${d.target.name}`)
+      .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
 
     this.selectionNode = this.selectionNode
       .data(data.nodes, d => d.name)
@@ -113,10 +127,10 @@ export default class Sankey {
       .append('rect')
       .attr('height', d => d.dy)
       .attr('width', () => this.sankey.nodeWidth())
-      .style('fill', d => { d.color = color(d.name.replace(/ .*/, '')); return d.color })
-      .style('stroke', d => rgb(d.color).darker(2))
+      .style('fill', nodeColor)
+      .style('stroke', d => d.value < 1 ? '#bbb' : rgb(d.color).darker(2))
       .append('title')
-      .text(d => d.name)
+      .text(d => `${d.name}\n${d.value.toFixed()}`)
 
     this.selectionNode
       .append('text')
@@ -125,10 +139,34 @@ export default class Sankey {
       .attr('dy', '.35em')
       .attr('text-anchor', 'end')
       .attr('transform', null)
+      .style('fill', d => d.value < 1 ? '#bbb' : null)
       .text(d => d.name)
       .filter(d => d.x < this.width / 2)
       .attr('x', () => 6 + this.sankey.nodeWidth())
       .attr('text-anchor', 'start')
+
+    const grads = this.defs
+      .selectAll('linearGradient')
+      .data(data.links, d => getGradID)
+      .enter()
+      .append('linearGradient')
+      .attr('id', getGradID)
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y)
+
+    grads
+      .html('')
+      .append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', d => nodeColor((+d.source.x <= +d.target.x) ? d.source : d.target))
+
+    grads
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', d => nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
   }
 
   /**
@@ -149,14 +187,13 @@ export default class Sankey {
       .selectAll('.link')
       // required for properly animating links. d3 needs it to keep reference.
       .data(data.links, d => d.source.name + d.target.name)
-      // .sort((a, b) => b.dy - a.dy)
+      // sort sets order in which links are drawn. important for overlapping / mouse effects
+      .sort((a, b) => b.dy - a.dy)
 
     // animate still existing links to new positions
     link.transition(t)
       .attr('d', this.path)
       .style('stroke-width', d => Math.max(1, d.dy))
-      // hide super small links which are just for positioning nodes
-      .style('display', d => d.value < 1 ? 'none' : 'inline')
 
     // remove links that do not exist in new data
     link

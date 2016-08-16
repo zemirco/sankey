@@ -1,4 +1,14 @@
 
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 50px 0 0 0;
+  font: 12px/1.4 Helvetica, Arial, sans-serif;
+}
+
 .node rect {
   cursor: move;
   fill-opacity: .9;
@@ -7,7 +17,6 @@
 
 .node text {
   pointer-events: none;
-  text-shadow: 0 1px 0 #fff;
 }
 
 .link {
