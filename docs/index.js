@@ -96,6 +96,24 @@ class App extends React.Component {
       target: this.refs.svg
     })
     this.sankey.render(a)
+    window.addEventListener('resize', this.resize)
+  }
+
+  resize = () => {
+    const {svg} = this.refs
+    // clear old content
+    svg.removeChild(svg.firstChild)
+    // draw again with new width
+    const width = svg.parentNode.offsetWidth
+    this.sankey = new Sankey({
+      target: svg,
+      width
+    })
+    this.sankey.render(a)
+  }
+
+  componentWillUnmount () {
+    window.removeEventListener('resize', this.resize)
   }
 
   onClick = () => {
