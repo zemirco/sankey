@@ -1,17 +1,16 @@
 
-BIN = ./node_modules/.bin
+BIN = node_modules/.bin
 BROWSERIFY = $(BIN)/browserify
 STANDARD = $(BIN)/standard
-
-all: standard example/bundle.js
 
 .PHONY: standard
 standard:
 	$(STANDARD)
 
-example/bundle.js: example/index.js
-	$(BROWSERIFY) $< -o $@
+.PHONY: watch
+watch:
+	$(BIN)/watchify docs/index.js -o docs/bundle.js --debug --verbose
 
-.PHONY: clean
-clean:
-	rm -rf ./example/bundle.js
+.PHONY: serve
+serve:
+	cd docs && python -m SimpleHTTPServer 3000
