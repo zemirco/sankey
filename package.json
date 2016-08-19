@@ -31,7 +31,8 @@
     "browserify": "^13.1.0",
     "react": "^15.3.0",
     "react-dom": "^15.3.0",
-    "standard": "^7.1.2"
+    "standard": "^7.1.2",
+    "watchify": "^3.7.0"
   },
   "standard": {
     "parser": "babel-eslint"
