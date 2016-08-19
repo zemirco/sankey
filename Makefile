@@ -1,6 +1,5 @@
 
 BIN = node_modules/.bin
-BROWSERIFY = $(BIN)/browserify
 STANDARD = $(BIN)/standard
 
 .PHONY: standard
