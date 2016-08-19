@@ -42,7 +42,7 @@ const a = {
     { source: 6, target: 10, value: 2 },
     { source: 7, target: 8, value: 1 },
     { source: 7, target: 9, value: 5 },
-    { source: 7, target: 10, value: 7 }
+    { source: 7, target: 10, value: 0.001 }
   ]
 }
 
@@ -95,11 +95,11 @@ class App extends React.Component {
     this.sankey = new Sankey({
       target: this.refs.svg
     })
-    this.sankey.render(b)
+    this.sankey.render(a)
   }
 
   onClick = () => {
-    this.sankey.update(a)
+    this.sankey.update(b)
   }
 
   render () {
