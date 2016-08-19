@@ -64,18 +64,6 @@ export default class Sankey {
       .nodeWidth(nodeWidth)
       .nodePadding(nodePadding)
       .size([w, h])
-
-    this.defs = this.chart.append('defs')
-
-    this.path = this.sankey.link()
-
-    this.selectionLink = this.chart
-      .append('g')
-      .selectAll('.link')
-
-    this.selectionNode = this.chart
-      .append('g')
-      .selectAll('.node')
   }
 
   /**
@@ -90,7 +78,7 @@ export default class Sankey {
    */
   nodeColor (d) {
     const color = scaleOrdinal()
-      .domain(['service', 'setting', 'attack'])
+      .domain(['reception', 'setting', 'attack'])
       .range(['#009688', '#8BC34A', '#FFC107'])
 
     if (d.value < 1) {
@@ -114,48 +102,9 @@ export default class Sankey {
       .links(data.links)
       .layout(iterations)
 
-    this.selectionLink
-      .data(data.links, d => d.source.name + d.target.name)
-      .enter()
-      .append('path')
-      .attr('class', 'link')
-      .attr('d', this.path)
-      .style('stroke-width', d => Math.max(1, d.dy))
-      .style('stroke', d => `url(#${this.gradientID(d)})`)
-      // .sort((a, b) => b.dy - a.dy)
-      .append('title')
-      .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
-
-    const node = this.selectionNode
-      .data(data.nodes, d => d.name)
-      .enter()
-      .append('g')
-      .attr('class', 'node')
-      .attr('transform', d => `translate(${d.x}, ${d.y})`)
-
-    node
-      .append('rect')
-      .attr('height', d => d.dy)
-      .attr('width', () => this.sankey.nodeWidth())
-      .style('fill', this.nodeColor)
-      .style('stroke', d => d.value < 1 ? '#bbb' : rgb(d.color).darker(2))
-      .append('title')
-      .text(d => `${d.name}\n${d.value.toFixed()}`)
-
-    node
-      .append('text')
-      .attr('x', -6)
-      .attr('y', d => d.dy / 2)
-      .attr('dy', '.35em')
-      .attr('text-anchor', 'end')
-      .attr('transform', null)
-      .style('fill', d => d.value < 1 ? '#bbb' : null)
-      .text(d => d.name)
-      .filter(d => d.x < this.width / 2)
-      .attr('x', () => 6 + this.sankey.nodeWidth())
-      .attr('text-anchor', 'start')
-
-    const grads = this.defs
+    // linear gradient definitions
+    const grads = this.chart
+      .append('defs')
       .selectAll('linearGradient')
       .data(data.links, d => this.gradientID)
       .enter()
@@ -177,6 +126,60 @@ export default class Sankey {
       .append('stop')
       .attr('offset', '100%')
       .attr('stop-color', d => this.nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
+
+    // links
+    const path = this.sankey.link()
+
+    this.chart
+      .append('g')
+      .selectAll('.link')
+      .data(data.links, d => d.source.name + d.target.name)
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', path)
+      // css properties require units. must use `10px` instead 10 like in older d3 versions
+      // https://github.com/d3/d3-transition/issues/50
+      .style('stroke-width', d => `${Math.max(1, d.dy)}px`)
+      .style('stroke', d => `url(#${this.gradientID(d)})`)
+      .style('opacity', d => d.value < 1 ? 0.001 : null)
+      // .sort((a, b) => b.dy - a.dy)
+      .append('title')
+      .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
+
+    // nodes
+    const node = this.chart
+      .append('g')
+      .selectAll('.node')
+      .data(data.nodes, d => d.name)
+      .enter()
+      .append('g')
+      .attr('class', 'node')
+      .attr('transform', d => `translate(${d.x}, ${d.y})`)
+
+    // rect inside node
+    node
+      .append('rect')
+      .attr('height', d => d.dy)
+      .attr('width', () => this.sankey.nodeWidth())
+      .style('fill', this.nodeColor)
+      .style('stroke', d => d.value < 1 ? '#bbb' : rgb(d.color).darker(2))
+      .append('title')
+      .text(d => `${d.name}\n${d.value.toFixed()}`)
+
+    // text inside node
+    node
+      .append('text')
+      .attr('x', -6)
+      .attr('y', d => d.dy / 2)
+      .attr('dy', '.35em')
+      .attr('text-anchor', 'end')
+      .attr('transform', null)
+      .style('fill', d => d.value < 1 ? '#bbb' : null)
+      .text(d => d.name)
+      .filter(d => d.x < this.width / 2)
+      .attr('x', () => 6 + this.sankey.nodeWidth())
+      .attr('text-anchor', 'start')
   }
 
   /**
@@ -192,7 +195,57 @@ export default class Sankey {
 
     const t = transition().duration(1000)
 
-    // get all links
+    // gradients
+    const grads = this.chart
+      .select('defs')
+      .selectAll('linearGradient')
+      .data(data.links, d => this.gradientID)
+
+    // enter selection
+    const gradsEnter = grads
+      .enter()
+      .append('linearGradient')
+      .attr('id', this.gradientID)
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y)
+
+    gradsEnter
+      .html('')
+      .append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', d => this.nodeColor((+d.source.x <= +d.target.x) ? d.source : d.target))
+
+    gradsEnter
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', d => this.nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
+
+    // transition selection
+    const gradsTransition = grads.transition(t)
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y)
+
+    gradsTransition
+      .select('stop[offset="0%"]')
+      .attr('stop-color', d => this.nodeColor((+d.source.x <= +d.target.x) ? d.source : d.target))
+
+    gradsTransition
+      .select('stop[offset="100%"]')
+      .attr('stop-color', d => this.nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
+
+    // exit selection
+    grads
+      .exit()
+      .remove()
+
+    // links
+    const path = this.sankey.link()
+
     const link = this.chart
       .selectAll('.link')
       // required for properly animating links. d3 needs it to keep reference.
@@ -200,32 +253,43 @@ export default class Sankey {
       // sort sets order in which links are drawn. important for overlapping / mouse effects
       // .sort((a, b) => b.dy - a.dy)
 
-    // remove links that do not exist in new data
-    // link
-    //   .exit()
-    //   .remove()
+    // animate new links
+    link
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', path)
+      // css properties require units. must use `10px` instead 10 like in older d3 versions
+      // https://github.com/d3/d3-transition/issues/50
+      .style('stroke-width', d => `${Math.max(1, d.dy)}px`)
+      .style('stroke', d => `url(#${this.gradientID(d)})`)
+      .style('display', d => d.value < 1 ? 'none' : null)
+      // .sort((a, b) => b.dy - a.dy)
+      .append('title')
+      .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
 
     // animate still existing links to new positions
     link.transition(t)
-      .attr('d', this.path)
-      .style('stroke-width', d => Math.max(1, d.dy))
+      .attr('d', path)
+      .style('stroke-width', d => `${Math.max(1, d.dy)}px`)
       .style('stroke', d => `url(#${this.gradientID(d)})`)
+      .style('opacity', d => d.value < 1 ? 0.001 : null)
 
-    // get all nodes
-    // todo: we could not use this.nodeSelection
+    // remove old links
+    link.exit()
+      .transition(t)
+      .style('stroke-width', '0px')
+      .remove()
+
+    // nodes
     const node = this.chart
       .selectAll('.node')
       .data(data.nodes, d => d.name)
 
-    // move still existing nodes to new positions
+    // animate still existing nodes to new positions
     node
       .transition(t)
       .attr('transform', d => `translate(${d.x}, ${d.y})`)
-
-    // remove nodes that do not exist in new data
-    // node
-    //   .exit()
-    //   .remove()
 
     // get all rects
     const rect = this.chart
@@ -237,12 +301,7 @@ export default class Sankey {
       .transition(t)
       .attr('height', d => d.dy)
 
-    // remove rects that do not exist in new data
-    // rect
-    //   .exit()
-    //   .remove()
-
-    // get all text / node labels
+    // text
     const text = this.chart
       .selectAll('text')
       .data(data.nodes, d => d.name)
@@ -252,11 +311,6 @@ export default class Sankey {
       .transition(t)
       .attr('y', d => d.dy / 2)
       .filter(d => d.x < this.width / 2)
-
-    // remove text that does not exist anymore
-    text
-      .exit()
-      .remove()
   }
 
 }
