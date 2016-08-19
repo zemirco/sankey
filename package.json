@@ -1,7 +1,7 @@
 {
   "name": "sankey",
   "version": "1.0.0",
-  "description": "D3 sankey",
+  "description": "D3 sankey chart",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,7 +20,7 @@
       ]
     ]
   },
-  "author": "",
+  "author": "Mirco Zeiss <mirco.zeiss@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "^6.1.2",
