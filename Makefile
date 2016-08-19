@@ -1,6 +1,7 @@
 
 BIN = node_modules/.bin
 STANDARD = $(BIN)/standard
+WATCHIFY = $(BIN)/watchify
 
 .PHONY: standard
 standard:
@@ -8,7 +9,7 @@ standard:
 
 .PHONY: watch
 watch:
-	$(BIN)/watchify docs/index.js -o docs/bundle.js --debug --verbose
+	$(WATCHIFY) docs/index.js -o docs/bundle.js --debug --verbose
 
 .PHONY: serve
 serve:
