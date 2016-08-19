@@ -79,24 +79,34 @@ export default class Sankey {
   }
 
   /**
-   * render
+   * Create gradient identifier.
    */
-  render (data, options = {}) {
-    const {iterations} = this
+  gradientID (d) {
+    return `linkGrad-${d.source.name}-${d.target.name}`.replace(/\s/g, '')
+  }
+
+  /**
+   * Get node color from datum.
+   */
+  nodeColor (d) {
     const color = scaleOrdinal()
       .domain(['service', 'setting', 'attack'])
       .range(['#009688', '#8BC34A', '#FFC107'])
 
-    const getGradID = (d) => `linkGrad-${d.source.name}-${d.target.name}`.replace(/\s/g, '')
-    const nodeColor = (d) => {
-      if (d.value < 1) {
-        d.color = '#bbb'
-      } else {
-        const category = d.name.replace(/ .*/, '').toLowerCase()
-        d.color = color(category)
-      }
-      return d.color
+    if (d.value < 1) {
+      d.color = '#bbb'
+    } else {
+      const category = d.name.replace(/ .*/, '').toLowerCase()
+      d.color = color(category)
     }
+    return d.color
+  }
+
+  /**
+   * render
+   */
+  render (data, options = {}) {
+    const {iterations} = this
 
     // get data
     this.sankey
@@ -105,34 +115,34 @@ export default class Sankey {
       .layout(iterations)
 
     this.selectionLink
-      .data(data.links.filter(d => d.value >= 1), d => d.source.name + d.target.name)
+      .data(data.links, d => d.source.name + d.target.name)
       .enter()
       .append('path')
       .attr('class', 'link')
       .attr('d', this.path)
       .style('stroke-width', d => Math.max(1, d.dy))
-      .style('stroke', d => `url(#${getGradID(d)})`)
-      .sort((a, b) => b.dy - a.dy)
+      .style('stroke', d => `url(#${this.gradientID(d)})`)
+      // .sort((a, b) => b.dy - a.dy)
       .append('title')
       .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
 
-    this.selectionNode = this.selectionNode
+    const node = this.selectionNode
       .data(data.nodes, d => d.name)
       .enter()
       .append('g')
       .attr('class', 'node')
       .attr('transform', d => `translate(${d.x}, ${d.y})`)
 
-    this.selectionNode
+    node
       .append('rect')
       .attr('height', d => d.dy)
       .attr('width', () => this.sankey.nodeWidth())
-      .style('fill', nodeColor)
+      .style('fill', this.nodeColor)
       .style('stroke', d => d.value < 1 ? '#bbb' : rgb(d.color).darker(2))
       .append('title')
       .text(d => `${d.name}\n${d.value.toFixed()}`)
 
-    this.selectionNode
+    node
       .append('text')
       .attr('x', -6)
       .attr('y', d => d.dy / 2)
@@ -147,10 +157,10 @@ export default class Sankey {
 
     const grads = this.defs
       .selectAll('linearGradient')
-      .data(data.links, d => getGradID)
+      .data(data.links, d => this.gradientID)
       .enter()
       .append('linearGradient')
-      .attr('id', getGradID)
+      .attr('id', this.gradientID)
       .attr('gradientUnits', 'userSpaceOnUse')
       .attr('x1', d => d.source.x)
       .attr('y1', d => d.source.y)
@@ -161,12 +171,12 @@ export default class Sankey {
       .html('')
       .append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', d => nodeColor((+d.source.x <= +d.target.x) ? d.source : d.target))
+      .attr('stop-color', d => this.nodeColor((+d.source.x <= +d.target.x) ? d.source : d.target))
 
     grads
       .append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', d => nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
+      .attr('stop-color', d => this.nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
   }
 
   /**
@@ -188,20 +198,23 @@ export default class Sankey {
       // required for properly animating links. d3 needs it to keep reference.
       .data(data.links, d => d.source.name + d.target.name)
       // sort sets order in which links are drawn. important for overlapping / mouse effects
-      .sort((a, b) => b.dy - a.dy)
+      // .sort((a, b) => b.dy - a.dy)
+
+    // remove links that do not exist in new data
+    // link
+    //   .exit()
+    //   .remove()
 
     // animate still existing links to new positions
     link.transition(t)
       .attr('d', this.path)
       .style('stroke-width', d => Math.max(1, d.dy))
-
-    // remove links that do not exist in new data
-    link
-      .exit()
-      .remove()
+      .style('stroke', d => `url(#${this.gradientID(d)})`)
 
     // get all nodes
-    const node = this.selectionNode
+    // todo: we could not use this.nodeSelection
+    const node = this.chart
+      .selectAll('.node')
       .data(data.nodes, d => d.name)
 
     // move still existing nodes to new positions
@@ -210,14 +223,14 @@ export default class Sankey {
       .attr('transform', d => `translate(${d.x}, ${d.y})`)
 
     // remove nodes that do not exist in new data
-    node
-      .exit()
-      .remove()
+    // node
+    //   .exit()
+    //   .remove()
 
     // get all rects
     const rect = this.chart
       .selectAll('rect')
-      .data(data.nodes, d => d.name)
+      .data(data.nodes, d => `rect-${d.name}`)
 
     // animate still existing rects to new positions
     rect
@@ -225,9 +238,9 @@ export default class Sankey {
       .attr('height', d => d.dy)
 
     // remove rects that do not exist in new data
-    rect
-      .exit()
-      .remove()
+    // rect
+    //   .exit()
+    //   .remove()
 
     // get all text / node labels
     const text = this.chart
