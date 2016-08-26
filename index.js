@@ -274,6 +274,8 @@ export default class Sankey {
       .style('stroke-width', d => `${Math.max(1, d.dy)}px`)
       .style('stroke', d => `url(#${this.gradientID(d)})`)
       .style('opacity', d => d.value < 1 ? 0.001 : null)
+      .select('title')
+      .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
 
     // remove old links
     link.exit()
@@ -300,6 +302,8 @@ export default class Sankey {
     rect
       .transition(t)
       .attr('height', d => d.dy)
+      .select('title')
+      .text(d => `${d.name}\n${d.value.toFixed()}`)
 
     // text
     const text = this.chart
