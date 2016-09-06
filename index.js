@@ -3,7 +3,7 @@ import {select} from 'd3-selection'
 import {sankey} from 'd3-sankey'
 import {rgb} from 'd3-color'
 import {scaleOrdinal} from 'd3-scale'
-import {transition} from 'd3-transition'
+import 'd3-transition'
 
 const defaults = {
   // target element or selector to contain the svg
@@ -193,8 +193,6 @@ export default class Sankey {
       .links(data.links)
       .layout(iterations)
 
-    const t = transition().duration(1000)
-
     // gradients
     const grads = this.chart
       .select('defs')
@@ -224,7 +222,7 @@ export default class Sankey {
       .attr('stop-color', d => this.nodeColor((+d.source.x > +d.target.x) ? d.source : d.target))
 
     // transition selection
-    const gradsTransition = grads.transition(t)
+    const gradsTransition = grads.transition()
       .attr('x1', d => d.source.x)
       .attr('y1', d => d.source.y)
       .attr('x2', d => d.target.x)
@@ -269,7 +267,7 @@ export default class Sankey {
       .text((d) => `${d.source.name} -> ${d.target.name}\n${d.value}`)
 
     // animate still existing links to new positions
-    link.transition(t)
+    link.transition()
       .attr('d', path)
       .style('stroke-width', d => `${Math.max(1, d.dy)}px`)
       .style('stroke', d => `url(#${this.gradientID(d)})`)
@@ -279,7 +277,7 @@ export default class Sankey {
 
     // remove old links
     link.exit()
-      .transition(t)
+      .transition()
       .style('stroke-width', '0px')
       .remove()
 
@@ -290,7 +288,7 @@ export default class Sankey {
 
     // animate still existing nodes to new positions
     node
-      .transition(t)
+      .transition()
       .attr('transform', d => `translate(${d.x}, ${d.y})`)
 
     // get all rects
@@ -300,7 +298,7 @@ export default class Sankey {
 
     // animate still existing rects to new positions
     rect
-      .transition(t)
+      .transition()
       .attr('height', d => d.dy)
       .select('title')
       .text(d => `${d.name}\n${d.value.toFixed()}`)
@@ -312,7 +310,7 @@ export default class Sankey {
 
     // animate still existing text to new position
     text
-      .transition(t)
+      .transition()
       .attr('y', d => d.dy / 2)
       .filter(d => d.x < this.width / 2)
   }
