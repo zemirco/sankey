@@ -312,10 +312,10 @@ export default class Sankey {
 
     // animate still existing text to new position
     text
+      .style('fill', d => d.value < 1 ? '#bbb' : null)
       .transition()
       .attr('y', d => d.dy / 2)
       .filter(d => d.x < this.width / 2)
-      .style('fill', d => d.value < 1 ? '#bbb' : null)
   }
 
 }

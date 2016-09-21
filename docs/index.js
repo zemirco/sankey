@@ -76,7 +76,7 @@ const data = {
       { source: 4, target: 8, value: 1 },
       { source: 4, target: 9, value: 0 },
       { source: 4, target: 10, value: 0 },
-      { source: 4, target: 5, value: 0 },
+      { source: 4, target: 5, value: 1 },
       { source: 4, target: 6, value: 1 },
       { source: 4, target: 7, value: 5 },
       { source: 5, target: 8, value: 0.001 },
