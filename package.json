@@ -1,6 +1,6 @@
 {
   "name": "sankey",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "D3 sankey chart",
   "main": "index.js",
   "scripts": {
