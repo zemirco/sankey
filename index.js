@@ -300,6 +300,8 @@ export default class Sankey {
 
     // animate still existing rects to new positions
     rect
+      .style('fill', this.nodeColor)
+      .style('stroke', d => d.value < 1 ? '#bbb' : rgb(d.color).darker(2))
       .transition(t)
       .attr('height', d => d.dy)
       .select('title')
@@ -315,6 +317,7 @@ export default class Sankey {
       .transition(t)
       .attr('y', d => d.dy / 2)
       .filter(d => d.x < this.width / 2)
+      .style('fill', d => d.value < 1 ? '#bbb' : null)
   }
 
 }
